@@ -1,0 +1,25 @@
+{
+  "manifest_version": 3,
+  "name": "Annoying LeetCode Reminder",
+  "version": "2.0",
+  "description": "Aggressively injects a reminder into every webpage if the daily isn't done.",
+  "permissions": [
+    "alarms",
+    "storage"
+  ],
+  "host_permissions": [
+    "https://leetcode.com/*",
+    "https://api.github.com/*",
+    "https://codeforces.com/*",
+    "<all_urls>"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["content.js"]
+    }
+  ]
+}
