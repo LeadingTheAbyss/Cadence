@@ -10,9 +10,14 @@ I built Cadence because reminder apps you have to open don't work you forget to 
 
 Cadence continuously tracks three independent signals of daily progress a LeetCode daily challenge solve, a GitHub contribution, and a Codeforces submission and refuses to let you forget about any of them until they're done.
 
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
+
+
 ## 🚀 What It Does
 
 Cadence runs silently in the background of your browser, polling each platform on a fixed interval. The moment it detects a gap in your daily streak, it renders a floating reminder card on top of whatever page you're currently on LeetCode, GitHub, Codeforces, or anything else with direct links back to the platform, a manual re-verification action, and short-term snooze controls (+2h / +6h) for when you're mid-focus and don't want the interruption yet.
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
 ## 🧩 Architecture & Components
 
@@ -26,6 +31,8 @@ Injected into every page via a `<all_urls>` match. Reads live state out of exten
 
 **Options Page (`options.html` / `options.js`)**
 A minimal settings surface for configuring your LeetCode username, Codeforces handle, and GitHub username + Personal Access Token. Nothing is bundled or hardcoded, every identity is user-supplied and stored exclusively in local extension storage.
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
 ## 📖 Daily-Progress Detection Logic
 
@@ -44,6 +51,8 @@ Each of the three platforms is checked independently and asynchronously, and a f
   <img src="CF_Graph.png" alt="Codeforces submission graph" width="600">
 
 If any network call fails, Cadence doesn't fail silently or spam retries it schedules a single one-minute retry alarm for that specific check and leaves the others unaffected. A global snooze respects your focus time by suppressing re-flagging until it expires, at which point checks resume automatically.
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
 ## ⚙️ Installation
 
@@ -72,6 +81,8 @@ Cadence isn't on the Chrome Web Store, so it's installed as an unpacked extensio
 
 5. **Verify it loaded correctly.**
    You shouldn't see any red "Errors" button on the extension's card. If you do, click it to see what failed (usually a wrong folder was selected in step 4).
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
 
 ## 🔑 Setup
 
@@ -109,8 +120,12 @@ Cadence ships with no accounts or tokens baked in, you tell it who you are. Noth
 
 Tokens and usernames never leave your machine except in direct, authenticated calls to that platform's own API, nothing is proxied, logged, or sent to any third party.
 
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
+
 ## 🔐 Permissions
 
 - `alarms`, `storage` : periodic background polling and local state persistence.
 - `host_permissions` for `leetcode.com`, `api.github.com`, `codeforces.com` : direct API access.
 - `<all_urls>` content script match : so the reminder can surface on any page you're browsing, not just the tracked platforms.
+
+![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)
