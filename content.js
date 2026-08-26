@@ -22,6 +22,15 @@
         chrome.storage.local.get(STORAGE_KEYS, updateBanner);
     });
 
+    // Keep the green->red urgency gradient current even if nothing else changes.
+    setInterval(function () {
+        const card = document.getElementById('lc-reminder-card');
+        if (card && card.classList.contains('lc-visible')) {
+            const colors = getUrgencyColors();
+            card.style.background = `linear-gradient(155deg, ${colors.top} 0%, ${colors.bottom} 100%)`;
+        }
+    }, 5 * 60 * 1000);
+
     function updateBanner(state) {
         const isSnoozed = state.snoozeUntil && Date.now() < state.snoozeUntil;
         const pending = [];
@@ -37,6 +46,32 @@
         renderBanner(pending);
     }
 
+    // Stays green until 6am, then interpolates from green to red as the
+    // rest of the day (6am -> midnight) elapses.
+    function getUrgencyColors() {
+        const now = new Date();
+        const rampStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6).getTime();
+        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
+        const elapsed = now.getTime() - rampStart;
+        const fraction = Math.min(1, Math.max(0, elapsed / (endOfDay - rampStart)));
+
+        const from = { r: 0x1f, g: 0xa1, b: 0x3d };  // green
+        const to = { r: 0xd6, g: 0x1f, b: 0x1f };    // red
+        const lerp = (a, b) => Math.round(a + (b - a) * fraction);
+
+        const top = { r: lerp(from.r, to.r), g: lerp(from.g, to.g), b: lerp(from.b, to.b) };
+        const bottom = {
+            r: Math.round(top.r * 0.65),
+            g: Math.round(top.g * 0.65),
+            b: Math.round(top.b * 0.65)
+        };
+
+        return {
+            top: `rgb(${top.r}, ${top.g}, ${top.b})`,
+            bottom: `rgb(${bottom.r}, ${bottom.g}, ${bottom.b})`
+        };
+    }
+
     function renderBanner(pending) {
         if (!document.body) return;
         let card = document.getElementById('lc-reminder-card');
@@ -45,6 +80,9 @@
             card.id = 'lc-reminder-card';
             document.documentElement.appendChild(card);
         }
+
+        const colors = getUrgencyColors();
+        card.style.background = `linear-gradient(155deg, ${colors.top} 0%, ${colors.bottom} 100%)`;
 
         const itemsHtml = pending.map((key) => {
             const meta = SITE_META[key];
@@ -114,6 +152,7 @@
                 color: #ffffff;
                 border-radius: 14px;
                 box-shadow: 0 20px 40px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset;
+                transition: background 60s linear, opacity 0.22s ease, transform 0.22s ease;
                 overflow: hidden;
                 opacity: 0;
                 transform: translateY(16px) scale(0.97);

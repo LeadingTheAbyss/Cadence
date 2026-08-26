@@ -1,7 +1,4 @@
 const LEETCODE_API = 'https://leetcode.com/graphql';
-const LEETCODE_USERNAME = 'LeadingTheAbyss';
-const GITHUB_USERNAME = 'LeadingTheAbyss';
-const CODEFORCES_HANDLE = 'Masochistic';
 
 const DAILY_QUERY = `
   query questionOfToday { activeDailyCodingChallengeQuestion { question { titleSlug } } }
@@ -25,6 +22,12 @@ function getMidnightISTTimestamp() {
 
 async function checkDailyChallenge() {
   try {
+    const { leetcodeUsername } = await chrome.storage.local.get(['leetcodeUsername']);
+    if (!leetcodeUsername) {
+      console.warn("No LeetCode username configured; skipping LeetCode check.");
+      return;
+    }
+
     const dailyRes = await fetch(LEETCODE_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -38,7 +41,7 @@ async function checkDailyChallenge() {
     const subRes = await fetch(LEETCODE_API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ query: SUBMISSIONS_QUERY, variables: { username: LEETCODE_USERNAME } })
+      body: JSON.stringify({ query: SUBMISSIONS_QUERY, variables: { username: leetcodeUsername } })
     });
     const subData = await subRes.json();
     const submissions = subData.data?.recentAcSubmissionList;
@@ -79,9 +82,9 @@ function getTodayUTCDateString() {
 
 async function checkGithub() {
   try {
-    const { githubToken } = await chrome.storage.local.get(['githubToken']);
-    if (!githubToken) {
-      console.warn("No GitHub token configured; skipping GitHub check.");
+    const { githubToken, githubUsername } = await chrome.storage.local.get(['githubToken', 'githubUsername']);
+    if (!githubToken || !githubUsername) {
+      console.warn("No GitHub token/username configured; skipping GitHub check.");
       return;
     }
 
@@ -98,7 +101,7 @@ async function checkGithub() {
       },
       body: JSON.stringify({
         query: GITHUB_CONTRIBUTIONS_QUERY,
-        variables: { username: GITHUB_USERNAME, from: fromIso, to: toIso }
+        variables: { username: githubUsername, from: fromIso, to: toIso }
       })
     });
     const data = await res.json();
@@ -123,7 +126,13 @@ async function checkGithub() {
 
 async function checkCodeforces() {
   try {
-    const res = await fetch(`https://codeforces.com/api/user.status?handle=${CODEFORCES_HANDLE}&from=1&count=20`);
+    const { codeforcesHandle } = await chrome.storage.local.get(['codeforcesHandle']);
+    if (!codeforcesHandle) {
+      console.warn("No Codeforces handle configured; skipping Codeforces check.");
+      return;
+    }
+
+    const res = await fetch(`https://codeforces.com/api/user.status?handle=${encodeURIComponent(codeforcesHandle)}&from=1&count=20`);
     const data = await res.json();
 
     if (data.status !== 'OK') return;

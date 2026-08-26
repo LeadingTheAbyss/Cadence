@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "Annoying LeetCode Reminder",
+  "name": "Cadence",
   "version": "2.0",
-  "description": "Aggressively injects a reminder into every webpage if the daily isn't done.",
+  "description": "Aggressively reminds you on every webpage until you've done your daily LeetCode, GitHub, and Codeforces activity.",
   "permissions": [
     "alarms",
     "storage"
