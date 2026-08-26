@@ -58,19 +58,62 @@ async function checkDailyChallenge() {
   }
 }
 
+const GITHUB_CONTRIBUTIONS_QUERY = `
+  query($username: String!, $from: DateTime!, $to: DateTime!) {
+    user(login: $username) {
+      contributionsCollection(from: $from, to: $to) {
+        contributionCalendar {
+          weeks { contributionDays { date contributionCount } }
+        }
+      }
+    }
+  }
+`;
+
+// GitHub's contributionCalendar buckets days by the profile's timezone
+// setting, defaulting to UTC when none is set (as is the case here).
+// Returns today's date as YYYY-MM-DD in UTC, matching contributionDays[].date.
+function getTodayUTCDateString() {
+  return new Date().toISOString().slice(0, 10);
+}
+
 async function checkGithub() {
   try {
-    const res = await fetch(`https://api.github.com/users/${GITHUB_USERNAME}/events/public?per_page=30`);
-    const events = await res.json();
+    const { githubToken } = await chrome.storage.local.get(['githubToken']);
+    if (!githubToken) {
+      console.warn("No GitHub token configured; skipping GitHub check.");
+      return;
+    }
 
-    if (!Array.isArray(events)) return;
+    const now = new Date();
+    const fromIso = new Date(now.getTime() - 2 * 86400000).toISOString();
+    const toIso = now.toISOString();
+    const todayUTC = getTodayUTCDateString();
 
-    const midnightIST = getMidnightISTTimestamp();
-    const hasCommitToday = events.some(evt =>
-      evt.type === 'PushEvent' && (new Date(evt.created_at).getTime() / 1000) > midnightIST
-    );
+    const res = await fetch('https://api.github.com/graphql', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${githubToken}`
+      },
+      body: JSON.stringify({
+        query: GITHUB_CONTRIBUTIONS_QUERY,
+        variables: { username: GITHUB_USERNAME, from: fromIso, to: toIso }
+      })
+    });
+    const data = await res.json();
+    const weeks = data.data?.user?.contributionsCollection?.contributionCalendar?.weeks;
 
-    chrome.storage.local.set({ isGithubDone: hasCommitToday });
+    if (!Array.isArray(weeks)) {
+      console.error("GitHub GraphQL response missing contribution data.", data);
+      return;
+    }
+
+    const todayEntry = weeks
+      .flatMap(w => w.contributionDays)
+      .find(d => d.date === todayUTC);
+
+    chrome.storage.local.set({ isGithubDone: !!todayEntry && todayEntry.contributionCount > 0 });
 
   } catch (error) {
     console.error("GitHub fetch failed.", error);

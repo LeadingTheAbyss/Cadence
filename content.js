@@ -61,7 +61,6 @@
             <div class="lc-header">
                 <span class="lc-pulse-dot"></span>
                 <span class="lc-title">Dailies pending</span>
-                <button class="lc-close" id="lc-close-btn" title="Snooze 2 hours" aria-label="Snooze">&times;</button>
             </div>
             <div class="lc-list">${itemsHtml}</div>
             <div class="lc-footer">
@@ -89,10 +88,6 @@
 
         document.getElementById('lc-snooze-6h').addEventListener('click', () => {
             chrome.runtime.sendMessage({ action: 'snooze', hours: 6 });
-        });
-
-        document.getElementById('lc-close-btn').addEventListener('click', () => {
-            chrome.runtime.sendMessage({ action: 'snooze', hours: 2 });
         });
     }
 
@@ -158,21 +153,6 @@
                 flex: 1;
                 text-transform: uppercase;
                 opacity: 0.95;
-            }
-            #lc-reminder-card .lc-close {
-                background: transparent;
-                border: none;
-                color: rgba(255,255,255,0.75);
-                font-size: 20px;
-                line-height: 1;
-                cursor: pointer;
-                padding: 0 4px;
-                border-radius: 6px;
-                transition: background 0.15s, color 0.15s;
-            }
-            #lc-reminder-card .lc-close:hover {
-                background: rgba(255,255,255,0.15);
-                color: #ffffff;
             }
             #lc-reminder-card .lc-list {
                 display: flex;
