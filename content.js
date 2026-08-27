@@ -78,7 +78,7 @@
         if (!card) {
             card = document.createElement('div');
             card.id = 'lc-reminder-card';
-            document.documentElement.appendChild(card);
+            document.body.appendChild(card);
         }
 
         const colors = getUrgencyColors();
@@ -141,6 +141,12 @@
         const style = document.createElement('style');
         style.id = 'lc-reminder-style';
         style.textContent = `
+            #lc-reminder-card, #lc-reminder-card * {
+                font-style: normal;
+                text-transform: none;
+                letter-spacing: normal;
+                box-sizing: border-box;
+            }
             #lc-reminder-card {
                 position: fixed;
                 bottom: 20px;
@@ -152,11 +158,10 @@
                 color: #ffffff;
                 border-radius: 14px;
                 box-shadow: 0 20px 40px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset;
-                transition: background 60s linear, opacity 0.22s ease, transform 0.22s ease;
                 overflow: hidden;
                 opacity: 0;
                 transform: translateY(16px) scale(0.97);
-                transition: opacity 0.22s ease, transform 0.22s ease;
+                transition: background 60s linear, opacity 0.22s ease, transform 0.22s ease;
                 pointer-events: none;
             }
             #lc-reminder-card.lc-visible {
