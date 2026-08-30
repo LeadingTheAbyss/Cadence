@@ -65,33 +65,27 @@ const GITHUB_CONTRIBUTIONS_QUERY = `
   query($username: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $username) {
       contributionsCollection(from: $from, to: $to) {
-        contributionCalendar {
-          weeks { contributionDays { date contributionCount } }
+        commitContributionsByRepository(maxRepositories: 20) {
+          contributions(first: 50) {
+            nodes { occurredAt commitCount }
+          }
         }
       }
     }
   }
 `;
 
-// GitHub's contributionCalendar buckets days by the profile's timezone
-// setting, defaulting to UTC when none is set (as is the case here).
-// Returns today's date as YYYY-MM-DD in UTC, matching contributionDays[].date.
-function getTodayUTCDateString() {
-  return new Date().toISOString().slice(0, 10);
-}
-
 async function checkGithub() {
   try {
     const { githubToken, githubUsername } = await chrome.storage.local.get(['githubToken', 'githubUsername']);
     if (!githubToken || !githubUsername) {
-      console.warn("No GitHub token/username configured; skipping GitHub check.");
+      chrome.storage.local.set({ githubError: 'No token saved. Open extension options and save a PAT.' });
       return;
     }
 
     const now = new Date();
     const fromIso = new Date(now.getTime() - 2 * 86400000).toISOString();
     const toIso = now.toISOString();
-    const todayUTC = getTodayUTCDateString();
 
     const res = await fetch('https://api.github.com/graphql', {
       method: 'POST',
@@ -105,18 +99,27 @@ async function checkGithub() {
       })
     });
     const data = await res.json();
-    const weeks = data.data?.user?.contributionsCollection?.contributionCalendar?.weeks;
 
-    if (!Array.isArray(weeks)) {
-      console.error("GitHub GraphQL response missing contribution data.", data);
+    if (data.errors) {
+      chrome.storage.local.set({ githubError: data.errors.map(e => e.message).join('; ') });
       return;
     }
 
-    const todayEntry = weeks
-      .flatMap(w => w.contributionDays)
-      .find(d => d.date === todayUTC);
+    const byRepo = data.data?.user?.contributionsCollection?.commitContributionsByRepository;
 
-    chrome.storage.local.set({ isGithubDone: !!todayEntry && todayEntry.contributionCount > 0 });
+    if (!Array.isArray(byRepo)) {
+      chrome.storage.local.set({ githubError: 'Unexpected GitHub GraphQL response shape.' });
+      return;
+    }
+
+    const midnightIST = getMidnightISTTimestamp();
+    const hasCommitSinceMidnightIST = byRepo.some(repo =>
+      repo.contributions.nodes.some(n =>
+        n.commitCount > 0 && (new Date(n.occurredAt).getTime() / 1000) > midnightIST
+      )
+    );
+
+    chrome.storage.local.set({ isGithubDone: hasCommitSinceMidnightIST, githubError: null });
 
   } catch (error) {
     console.error("GitHub fetch failed.", error);
@@ -150,14 +153,11 @@ async function checkCodeforces() {
   }
 }
 
-function checkAll() {
+async function checkAll() {
   // Respect an active snooze - skip re-flagging things as not-done until it expires
-  chrome.storage.local.get(['snoozeUntil'], (result) => {
-    if (result.snoozeUntil && Date.now() < result.snoozeUntil) return;
-    checkDailyChallenge();
-    checkGithub();
-    checkCodeforces();
-  });
+  const { snoozeUntil } = await chrome.storage.local.get(['snoozeUntil']);
+  if (snoozeUntil && Date.now() < snoozeUntil) return;
+  await Promise.all([checkDailyChallenge(), checkGithub(), checkCodeforces()]);
 }
 
 chrome.runtime.onInstalled.addListener(() => {
@@ -186,8 +186,10 @@ chrome.alarms.onAlarm.addListener((alarm) => {
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'forceCheck') {
-    chrome.storage.local.set({ snoozeUntil: null });
-    checkAll();
+    chrome.storage.local.set({ snoozeUntil: null }, () => {
+      checkAll().finally(() => sendResponse({ done: true }));
+    });
+    return true; // keeps the message channel open for async sendResponse
   } else if (request.action === 'snooze') {
     const hours = request.hours;
     const until = Date.now() + hours * 60 * 60 * 1000;

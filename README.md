@@ -128,4 +128,10 @@ Tokens and usernames never leave your machine except in direct, authenticated ca
 - `host_permissions` for `leetcode.com`, `api.github.com`, `codeforces.com` : direct API access.
 - `<all_urls>` content script match : so the reminder can surface on any page you're browsing, not just the tracked platforms.
 
+## 📌 Updates
+
+**Version 1.1**
+- Fixed the GitHub timing issue: the check used to compare daily contribution counts bucketed by UTC, which meant a commit made early in the morning IST could land in the wrong day's bucket and get marked as not done even though GitHub's own profile page showed it as complete. GitHub activity is now verified using exact per-commit timestamps compared against midnight IST, matching how the LeetCode and Codeforces checks already work.
+- Fixed the "Verify now" button getting stuck on "Checking...": forcing a check that didn't change any stored value never fired the storage listener that resets the button, so it could stay disabled indefinitely. The button now always resets once the check completes, with a fallback timeout as a safety net.
+
 ![-----------------------------------------------------](https://raw.githubusercontent.com/andreasbm/readme/master/assets/lines/rainbow.png)

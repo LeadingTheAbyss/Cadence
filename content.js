@@ -117,7 +117,19 @@
         verifyBtn.addEventListener('click', () => {
             verifyBtn.disabled = true;
             verifyBtn.textContent = 'Checking...';
-            chrome.runtime.sendMessage({ action: 'forceCheck' });
+
+            const resetBtn = () => {
+                if (!verifyBtn.isConnected) return;
+                verifyBtn.disabled = false;
+                verifyBtn.textContent = 'Verify now';
+            };
+
+            const fallbackTimer = setTimeout(resetBtn, 10000);
+
+            chrome.runtime.sendMessage({ action: 'forceCheck' }, () => {
+                clearTimeout(fallbackTimer);
+                resetBtn();
+            });
         });
 
         document.getElementById('lc-snooze-2h').addEventListener('click', () => {

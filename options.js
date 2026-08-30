@@ -1,11 +1,28 @@
 const FIELDS = ['leetcodeUsername', 'codeforcesHandle', 'githubUsername'];
 
-chrome.storage.local.get([...FIELDS, 'githubToken'], (result) => {
+function renderGithubError(githubError) {
+  const box = document.getElementById('github-error');
+  if (githubError) {
+    box.textContent = `Last GitHub check error: ${githubError}`;
+    box.hidden = false;
+  } else {
+    box.hidden = true;
+  }
+}
+
+chrome.storage.local.get([...FIELDS, 'githubToken', 'githubError'], (result) => {
   FIELDS.forEach((field) => {
     if (result[field]) document.getElementById(field).value = result[field];
   });
   if (result.githubToken) {
     document.getElementById('githubToken').placeholder = 'Token already saved (hidden)';
+  }
+  renderGithubError(result.githubError);
+});
+
+chrome.storage.onChanged.addListener((changes) => {
+  if (changes.githubError) {
+    renderGithubError(changes.githubError.newValue);
   }
 });
 

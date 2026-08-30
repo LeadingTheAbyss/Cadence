@@ -39,6 +39,17 @@
   p { font-size: 13px; color: #999; line-height: 1.5; }
   a { color: #ff8080; }
   hr { border: none; border-top: 1px solid #333; margin: 20px 0; }
+  #github-error {
+    margin-top: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    background: #2a1414;
+    border: 1px solid #663;
+    color: #ff8080;
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+  #github-error[hidden] { display: none; }
 </style>
 </head>
 <body>
@@ -67,6 +78,7 @@
 
   <button id="save">Save</button>
   <div id="status"></div>
+  <div id="github-error" hidden></div>
 
   <script src="options.js"></script>
 </body>
