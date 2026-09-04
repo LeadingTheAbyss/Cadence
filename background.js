@@ -20,9 +20,37 @@ function getMidnightISTTimestamp() {
   return Math.floor((istMidnightMs - IST_OFFSET_MS) / 1000);
 }
 
+// LeetCode's daily challenge doesn't actually roll over at midnight IST,
+// it rolls over at 5:30 AM IST. Returns the unix timestamp (seconds) of the
+// most recent 5:30 AM IST.
+function getLeetCodeResetTimestamp() {
+  const RESET_OFFSET_MS = 5.5 * 60 * 60 * 1000;
+  const midnightIST = getMidnightISTTimestamp();
+  const todayResetTimestamp = midnightIST + RESET_OFFSET_MS / 1000;
+  if (Date.now() / 1000 < todayResetTimestamp) {
+    return todayResetTimestamp - 86400;
+  }
+  return todayResetTimestamp;
+}
+
+const DEFAULT_USERNAMES = {
+  leetcodeUsername: '',
+  githubUsername: '',
+  codeforcesHandle: ''
+};
+
+async function getUsernames() {
+  const stored = await chrome.storage.local.get(Object.keys(DEFAULT_USERNAMES));
+  return {
+    leetcodeUsername: stored.leetcodeUsername || DEFAULT_USERNAMES.leetcodeUsername,
+    githubUsername: stored.githubUsername || DEFAULT_USERNAMES.githubUsername,
+    codeforcesHandle: stored.codeforcesHandle || DEFAULT_USERNAMES.codeforcesHandle
+  };
+}
+
 async function checkDailyChallenge() {
   try {
-    const { leetcodeUsername } = await chrome.storage.local.get(['leetcodeUsername']);
+    const { leetcodeUsername } = await getUsernames();
     if (!leetcodeUsername) {
       console.warn("No LeetCode username configured; skipping LeetCode check.");
       return;
@@ -48,9 +76,9 @@ async function checkDailyChallenge() {
 
     if (!submissions) return;
 
-    const midnightIST = getMidnightISTTimestamp();
+    const leetCodeReset = getLeetCodeResetTimestamp();
     const hasDoneDaily = submissions.some(sub =>
-      sub.titleSlug === dailySlug && Number(sub.timestamp) > midnightIST
+      sub.titleSlug === dailySlug && Number(sub.timestamp) > leetCodeReset
     );
 
     chrome.storage.local.set({ isDailyDone: hasDoneDaily });
@@ -77,7 +105,8 @@ const GITHUB_CONTRIBUTIONS_QUERY = `
 
 async function checkGithub() {
   try {
-    const { githubToken, githubUsername } = await chrome.storage.local.get(['githubToken', 'githubUsername']);
+    const { githubToken } = await chrome.storage.local.get(['githubToken']);
+    const { githubUsername } = await getUsernames();
     if (!githubToken || !githubUsername) {
       chrome.storage.local.set({ githubError: 'No token saved. Open extension options and save a PAT.' });
       return;
@@ -129,7 +158,7 @@ async function checkGithub() {
 
 async function checkCodeforces() {
   try {
-    const { codeforcesHandle } = await chrome.storage.local.get(['codeforcesHandle']);
+    const { codeforcesHandle } = await getUsernames();
     if (!codeforcesHandle) {
       console.warn("No Codeforces handle configured; skipping Codeforces check.");
       return;
@@ -195,6 +224,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     const until = Date.now() + hours * 60 * 60 * 1000;
     chrome.storage.local.set({ snoozeUntil: until });
     chrome.alarms.create('snoozeExpired', { delayInMinutes: hours * 60 });
+  } else if (request.action === 'openOptions') {
+    chrome.runtime.openOptionsPage();
   }
 });
 

@@ -5,7 +5,7 @@
         codeforces: { label: 'Codeforces', url: 'https://codeforces.com/problemset', icon: 'CF' }
     };
 
-    const STORAGE_KEYS = ['isDailyDone', 'isGithubDone', 'isCodeforcesDone', 'snoozeUntil'];
+    const STORAGE_KEYS = ['isDailyDone', 'isGithubDone', 'isCodeforcesDone', 'snoozeUntil', 'enabledPlatforms'];
 
     function init() {
         injectStyles();
@@ -22,67 +22,103 @@
         chrome.storage.local.get(STORAGE_KEYS, updateBanner);
     });
 
-    // Keep the green->red urgency gradient current even if nothing else changes.
+    // Keep the urgency gradient current even if nothing else changes.
     setInterval(function () {
-        const card = document.getElementById('lc-reminder-card');
-        if (card && card.classList.contains('lc-visible')) {
-            const colors = getUrgencyColors();
-            card.style.background = `linear-gradient(155deg, ${colors.top} 0%, ${colors.bottom} 100%)`;
-        }
+        chrome.storage.local.get(STORAGE_KEYS, updateBanner);
     }, 5 * 60 * 1000);
 
     function updateBanner(state) {
         const isSnoozed = state.snoozeUntil && Date.now() < state.snoozeUntil;
+        const enabled = Object.assign({ leetcode: true, github: true, codeforces: true }, state.enabledPlatforms);
+
         const pending = [];
-        if (state.isDailyDone !== true) pending.push('leetcode');
-        if (state.isGithubDone !== true) pending.push('github');
-        if (state.isCodeforcesDone !== true) pending.push('codeforces');
+        if (enabled.leetcode && state.isDailyDone !== true) pending.push('leetcode');
+        if (enabled.github && state.isGithubDone !== true) pending.push('github');
+        if (enabled.codeforces && state.isCodeforcesDone !== true) pending.push('codeforces');
 
         if (isSnoozed || pending.length === 0) {
             removeBanner();
             return;
         }
 
-        renderBanner(pending);
+        renderBanner(pending, enabled);
     }
 
-    // Stays green until 6am, then interpolates from green to red as the
-    // rest of the day (6am -> midnight) elapses.
-    function getUrgencyColors() {
-        const now = new Date();
-        const rampStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 6).getTime();
-        const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1).getTime();
-        const elapsed = now.getTime() - rampStart;
-        const fraction = Math.min(1, Math.max(0, elapsed / (endOfDay - rampStart)));
+    // Returns a 0-1 fraction of how far through the current IST day we are.
+    // 0 = 12:00 AM IST, approaching 1 = just before midnight IST.
+    function getISTDayProgress() {
+        const IST_OFFSET_MS = (5 * 60 + 30) * 60 * 1000;
+        const istNowMs = Date.now() + IST_OFFSET_MS;
+        const msIntoDay = istNowMs % 86400000;
+        return msIntoDay / 86400000;
+    }
 
-        const from = { r: 0x1f, g: 0xa1, b: 0x3d };  // green
-        const to = { r: 0xd6, g: 0x1f, b: 0x1f };    // red
-        const lerp = (a, b) => Math.round(a + (b - a) * fraction);
+    function lerp(a, b, t) {
+        return a + (b - a) * t;
+    }
 
-        const top = { r: lerp(from.r, to.r), g: lerp(from.g, to.g), b: lerp(from.b, to.b) };
-        const bottom = {
-            r: Math.round(top.r * 0.65),
-            g: Math.round(top.g * 0.65),
-            b: Math.round(top.b * 0.65)
-        };
-
+    function hexToRgb(hex) {
+        const clean = hex.replace('#', '');
         return {
-            top: `rgb(${top.r}, ${top.g}, ${top.b})`,
-            bottom: `rgb(${bottom.r}, ${bottom.g}, ${bottom.b})`
+            r: parseInt(clean.substring(0, 2), 16),
+            g: parseInt(clean.substring(2, 4), 16),
+            b: parseInt(clean.substring(4, 6), 16)
         };
     }
 
-    function renderBanner(pending) {
+    function rgbToHex({ r, g, b }) {
+        const toHex = (v) => Math.round(Math.min(255, Math.max(0, v))).toString(16).padStart(2, '0');
+        return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+    }
+
+    function lerpColor(hexA, hexB, t) {
+        const a = hexToRgb(hexA);
+        const b = hexToRgb(hexB);
+        return rgbToHex({
+            r: lerp(a.r, b.r, t),
+            g: lerp(a.g, b.g, t),
+            b: lerp(a.b, b.b, t)
+        });
+    }
+
+    function darken(hex, amount) {
+        const { r, g, b } = hexToRgb(hex);
+        const factor = 1 - amount;
+        return rgbToHex({ r: r * factor, g: g * factor, b: b * factor });
+    }
+
+    // Interpolates across an arbitrary array of hex color stops, splitting
+    // t (0-1) into stops.length - 1 even segments.
+    function lerpMultiStop(stops, t) {
+        const segments = stops.length - 1;
+        const clamped = Math.min(1, Math.max(0, t));
+        const segmentSize = 1 / segments;
+        const segmentIndex = Math.min(segments - 1, Math.floor(clamped / segmentSize));
+        const segmentT = (clamped - segmentIndex * segmentSize) / segmentSize;
+        return lerpColor(stops[segmentIndex], stops[segmentIndex + 1], segmentT);
+    }
+
+    const URGENCY_STOPS = ['#0b3d63', '#4fa8e0', '#ff8080', '#7a0f0f'];
+    const URGENCY_STOPS_DARK = URGENCY_STOPS.map((hex) => darken(hex, 0.35));
+
+    function getUrgencyGradient() {
+        const t = getISTDayProgress();
+        const top = lerpMultiStop(URGENCY_STOPS, t);
+        const bottom = lerpMultiStop(URGENCY_STOPS_DARK, t);
+        return `linear-gradient(155deg, ${top} 0%, ${bottom} 100%)`;
+    }
+
+    function renderBanner(pending, enabled) {
         if (!document.body) return;
         let card = document.getElementById('lc-reminder-card');
+        const wasSettingsOpen = card && card.classList.contains('lc-settings-open');
         if (!card) {
             card = document.createElement('div');
             card.id = 'lc-reminder-card';
             document.body.appendChild(card);
         }
 
-        const colors = getUrgencyColors();
-        card.style.background = `linear-gradient(155deg, ${colors.top} 0%, ${colors.bottom} 100%)`;
+        card.style.background = getUrgencyGradient();
 
         const itemsHtml = pending.map((key) => {
             const meta = SITE_META[key];
@@ -95,12 +131,30 @@
             `;
         }).join('');
 
+        const toggleHtml = Object.keys(SITE_META).map((key) => {
+            const meta = SITE_META[key];
+            const checked = enabled[key] ? 'checked' : '';
+            return `
+                <label class="lc-toggle">
+                    <input type="checkbox" data-platform="${key}" ${checked}>
+                    <span>Track ${meta.label}</span>
+                </label>
+            `;
+        }).join('');
+
         card.innerHTML = `
             <div class="lc-header">
                 <span class="lc-pulse-dot"></span>
                 <span class="lc-title">Dailies pending</span>
+                <button class="lc-gear-btn" id="lc-gear-btn" title="Settings" aria-label="Settings">&#9881;</button>
             </div>
             <div class="lc-list">${itemsHtml}</div>
+            <div class="lc-settings-panel" id="lc-settings-panel">
+                <div class="lc-settings-inner">
+                    ${toggleHtml}
+                    <button class="lc-btn lc-btn-ghost lc-btn-full" id="lc-open-options-btn">Edit usernames &amp; token &rarr;</button>
+                </div>
+            </div>
             <div class="lc-footer">
                 <button class="lc-btn lc-btn-primary" id="lc-verify-btn">Verify now</button>
                 <div class="lc-snooze-group">
@@ -109,6 +163,8 @@
                 </div>
             </div>
         `;
+
+        if (wasSettingsOpen) card.classList.add('lc-settings-open');
 
         // Trigger entrance animation on next frame
         requestAnimationFrame(() => card.classList.add('lc-visible'));
@@ -139,6 +195,24 @@
         document.getElementById('lc-snooze-6h').addEventListener('click', () => {
             chrome.runtime.sendMessage({ action: 'snooze', hours: 6 });
         });
+
+        document.getElementById('lc-gear-btn').addEventListener('click', () => {
+            card.classList.toggle('lc-settings-open');
+        });
+
+        document.getElementById('lc-open-options-btn').addEventListener('click', () => {
+            chrome.runtime.sendMessage({ action: 'openOptions' });
+        });
+
+        card.querySelectorAll('.lc-toggle input[data-platform]').forEach((input) => {
+            input.addEventListener('change', () => {
+                chrome.storage.local.get(['enabledPlatforms'], (result) => {
+                    const next = Object.assign({ leetcode: true, github: true, codeforces: true }, result.enabledPlatforms);
+                    next[input.dataset.platform] = input.checked;
+                    chrome.storage.local.set({ enabledPlatforms: next });
+                });
+            });
+        });
     }
 
     function removeBanner() {
@@ -166,14 +240,14 @@
                 width: 300px;
                 z-index: 2147483647;
                 font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-                background: linear-gradient(155deg, #d61f1f 0%, #a10f0f 100%);
+                background: #0b3d63;
                 color: #ffffff;
                 border-radius: 14px;
                 box-shadow: 0 20px 40px -10px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.08) inset;
                 overflow: hidden;
                 opacity: 0;
                 transform: translateY(16px) scale(0.97);
-                transition: background 60s linear, opacity 0.22s ease, transform 0.22s ease;
+                transition: background 1s ease, opacity 0.22s ease, transform 0.22s ease;
                 pointer-events: none;
             }
             #lc-reminder-card.lc-visible {
@@ -209,6 +283,46 @@
                 flex: 1;
                 text-transform: uppercase;
                 opacity: 0.95;
+            }
+            #lc-reminder-card .lc-gear-btn {
+                background: transparent;
+                border: none;
+                color: #ffffff;
+                opacity: 0.75;
+                font-size: 15px;
+                line-height: 1;
+                cursor: pointer;
+                padding: 2px 4px;
+                border-radius: 6px;
+                transition: opacity 0.15s, background 0.15s;
+            }
+            #lc-reminder-card .lc-gear-btn:hover {
+                opacity: 1;
+                background: rgba(255,255,255,0.12);
+            }
+            #lc-reminder-card .lc-settings-panel {
+                max-height: 0;
+                overflow: hidden;
+                transition: max-height 0.25s ease;
+            }
+            #lc-reminder-card.lc-settings-open .lc-settings-panel {
+                max-height: 220px;
+            }
+            #lc-reminder-card .lc-settings-inner {
+                display: flex;
+                flex-direction: column;
+                gap: 8px;
+                padding: 4px 12px 12px 12px;
+            }
+            #lc-reminder-card .lc-toggle {
+                display: flex;
+                align-items: center;
+                gap: 8px;
+                font-size: 12.5px;
+                cursor: pointer;
+            }
+            #lc-reminder-card .lc-toggle input {
+                cursor: pointer;
             }
             #lc-reminder-card .lc-list {
                 display: flex;
@@ -303,6 +417,11 @@
             }
             #lc-reminder-card .lc-btn-ghost:hover {
                 background: rgba(255,255,255,0.2);
+            }
+            #lc-reminder-card .lc-btn-full {
+                width: 100%;
+                font-size: 12px;
+                padding: 8px 0;
             }
         `;
         document.head.appendChild(style);

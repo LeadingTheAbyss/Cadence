@@ -130,6 +130,12 @@ Tokens and usernames never leave your machine except in direct, authenticated ca
 
 ## 📌 Updates
 
+**Version 1.2**
+- LeetCode's daily challenge is now checked against the correct reset time. Since LeetCode's own daily doesn't actually flip over right at midnight IST, Cadence used to mark you as "not done" for a little while even after a fresh daily had gone live. It now waits until the real reset time before checking, so the banner matches what you'd see on LeetCode itself.
+- Your LeetCode username, GitHub username, and Codeforces handle can now all be changed from the Options page at any time, and everything updates immediately after you save, no need to reinstall or edit any files.
+- The reminder card now changes color gradually through the day, dark blue in the early hours, shifting through light blue and light red, ending in dark red as the day runs out, so you get a visual sense of how much time is left without having to think about it.
+- Added a settings panel right on the reminder card itself (tap the small gear icon), where you can turn tracking for LeetCode, GitHub, or Codeforces on or off individually, and jump straight to the full Options page from a new "Edit usernames & token" button.
+
 **Version 1.1**
 - Fixed the GitHub timing issue: the check used to compare daily contribution counts bucketed by UTC, which meant a commit made early in the morning IST could land in the wrong day's bucket and get marked as not done even though GitHub's own profile page showed it as complete. GitHub activity is now verified using exact per-commit timestamps compared against midnight IST, matching how the LeetCode and Codeforces checks already work.
 - Fixed the "Verify now" button getting stuck on "Checking...": forcing a check that didn't change any stored value never fired the storage listener that resets the button, so it could stay disabled indefinitely. The button now always resets once the check completes, with a fallback timeout as a safety net.

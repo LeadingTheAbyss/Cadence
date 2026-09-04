@@ -12,6 +12,7 @@
     max-width: 440px;
   }
   h2 { margin-top: 0; }
+  h3 { font-size: 15px; margin-bottom: 12px; }
   label { display: block; margin-bottom: 6px; font-size: 13px; color: #ccc; }
   input {
     width: 100%;
@@ -35,7 +36,7 @@
     font-size: 14px;
   }
   button:hover { background: #e00; }
-  #status { margin-top: 12px; font-size: 13px; }
+  #username-status, #status { margin-top: 12px; font-size: 13px; }
   p { font-size: 13px; color: #999; line-height: 1.5; }
   a { color: #ff8080; }
   hr { border: none; border-top: 1px solid #333; margin: 20px 0; }
@@ -55,11 +56,19 @@
 <body>
   <h2>Cadence - Settings</h2>
 
+  <h3>Usernames</h3>
+
   <label for="leetcodeUsername">LeetCode Username</label>
   <input type="text" id="leetcodeUsername" placeholder="your-leetcode-username">
 
+  <label for="githubUsername">GitHub Username</label>
+  <input type="text" id="githubUsername" placeholder="your-github-username">
+
   <label for="codeforcesHandle">Codeforces Handle</label>
   <input type="text" id="codeforcesHandle" placeholder="your-codeforces-handle">
+
+  <button id="save-usernames">Save Usernames</button>
+  <div id="username-status"></div>
 
   <hr>
 
@@ -70,13 +79,11 @@
     with just the <b>read:user</b> scope. It's stored locally in this browser's
     extension storage only and never leaves your machine except to call GitHub's API.
   </p>
-  <label for="githubUsername">GitHub Username</label>
-  <input type="text" id="githubUsername" placeholder="your-github-username">
 
   <label for="githubToken">GitHub Personal Access Token</label>
   <input type="password" id="githubToken" placeholder="ghp_...">
 
-  <button id="save">Save</button>
+  <button id="save">Save Token</button>
   <div id="status"></div>
   <div id="github-error" hidden></div>
 
