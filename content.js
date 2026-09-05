@@ -136,8 +136,11 @@
             const checked = enabled[key] ? 'checked' : '';
             return `
                 <label class="lc-toggle">
-                    <input type="checkbox" data-platform="${key}" ${checked}>
-                    <span>Track ${meta.label}</span>
+                    <span class="lc-switch">
+                        <input type="checkbox" data-platform="${key}" ${checked}>
+                        <span class="lc-switch-track"></span>
+                    </span>
+                    <span class="lc-toggle-label">Track ${meta.label}</span>
                 </label>
             `;
         }).join('');
@@ -230,13 +233,18 @@
     }
 
     function showToast(card, message) {
-        const existing = card.querySelector('.lc-toast');
+        const existing = document.getElementById('lc-toast');
         if (existing) existing.remove();
 
+        const rect = card.getBoundingClientRect();
+
         const toast = document.createElement('div');
-        toast.className = 'lc-toast';
+        toast.id = 'lc-toast';
         toast.textContent = message;
-        card.appendChild(toast);
+        toast.style.right = (window.innerWidth - rect.right) + 'px';
+        toast.style.bottom = (window.innerHeight - rect.top + 10) + 'px';
+        toast.style.width = rect.width + 'px';
+        document.body.appendChild(toast);
 
         requestAnimationFrame(() => toast.classList.add('lc-toast-visible'));
 
@@ -348,12 +356,54 @@
             #lc-reminder-card .lc-toggle {
                 display: flex;
                 align-items: center;
-                gap: 8px;
-                font-size: 12.5px;
+                gap: 10px;
                 cursor: pointer;
             }
-            #lc-reminder-card .lc-toggle input {
+            #lc-reminder-card .lc-toggle-label {
+                font-size: 14.5px;
+                font-weight: 600;
+            }
+            #lc-reminder-card .lc-switch {
+                position: relative;
+                display: inline-block;
+                width: 34px;
+                height: 20px;
+                flex-shrink: 0;
+            }
+            #lc-reminder-card .lc-switch input {
+                position: absolute;
+                opacity: 0;
+                width: 0;
+                height: 0;
+            }
+            #lc-reminder-card .lc-switch-track {
+                position: absolute;
+                inset: 0;
+                background: rgba(255,255,255,0.28);
+                border-radius: 999px;
                 cursor: pointer;
+                transition: background 0.15s ease;
+            }
+            #lc-reminder-card .lc-switch-track::before {
+                content: '';
+                position: absolute;
+                left: 2px;
+                top: 2px;
+                width: 16px;
+                height: 16px;
+                background: #ffffff;
+                border-radius: 50%;
+                transition: transform 0.15s ease;
+            }
+            #lc-reminder-card .lc-switch input:checked + .lc-switch-track {
+                background: #2ecc71;
+            }
+            #lc-reminder-card .lc-switch input:checked + .lc-switch-track::before {
+                transform: translateX(14px);
+            }
+            #lc-reminder-card .lc-switch input:focus-visible + .lc-switch-track {
+                outline: 2px solid rgba(255,255,255,0.6);
+                outline-offset: 2px;
             }
             #lc-reminder-card .lc-list {
                 display: flex;
@@ -454,14 +504,12 @@
                 font-size: 12px;
                 padding: 8px 0;
             }
-            #lc-reminder-card .lc-toast {
-                position: absolute;
-                left: 12px;
-                right: 12px;
-                bottom: 100%;
-                margin-bottom: 8px;
+            #lc-toast {
+                position: fixed;
+                z-index: 2147483647;
                 background: rgba(0,0,0,0.88);
                 color: #ffffff;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
                 font-size: 12px;
                 font-weight: 600;
                 line-height: 1.4;
@@ -472,8 +520,9 @@
                 transition: opacity 0.2s ease, transform 0.2s ease;
                 pointer-events: none;
                 box-shadow: 0 8px 20px -6px rgba(0,0,0,0.5);
+                box-sizing: border-box;
             }
-            #lc-reminder-card .lc-toast.lc-toast-visible {
+            #lc-toast.lc-toast-visible {
                 opacity: 1;
                 transform: translateY(0);
             }
