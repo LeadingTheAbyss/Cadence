@@ -171,20 +171,34 @@
 
         const verifyBtn = document.getElementById('lc-verify-btn');
         verifyBtn.addEventListener('click', () => {
-            verifyBtn.disabled = true;
-            verifyBtn.textContent = 'Checking...';
+            chrome.storage.local.get(['leetcodeUsername', 'githubUsername', 'githubToken', 'codeforcesHandle'], (ids) => {
+                const isUnconfigured = pending.some((key) => {
+                    if (key === 'leetcode') return !ids.leetcodeUsername;
+                    if (key === 'github') return !ids.githubUsername || !ids.githubToken;
+                    if (key === 'codeforces') return !ids.codeforcesHandle;
+                    return false;
+                });
 
-            const resetBtn = () => {
-                if (!verifyBtn.isConnected) return;
-                verifyBtn.disabled = false;
-                verifyBtn.textContent = 'Verify now';
-            };
+                if (isUnconfigured) {
+                    showToast(card, 'Profile not set up. Tap the gear icon above and add your username.');
+                    return;
+                }
 
-            const fallbackTimer = setTimeout(resetBtn, 10000);
+                verifyBtn.disabled = true;
+                verifyBtn.textContent = 'Checking...';
 
-            chrome.runtime.sendMessage({ action: 'forceCheck' }, () => {
-                clearTimeout(fallbackTimer);
-                resetBtn();
+                const resetBtn = () => {
+                    if (!verifyBtn.isConnected) return;
+                    verifyBtn.disabled = false;
+                    verifyBtn.textContent = 'Verify now';
+                };
+
+                const fallbackTimer = setTimeout(resetBtn, 10000);
+
+                chrome.runtime.sendMessage({ action: 'forceCheck' }, () => {
+                    clearTimeout(fallbackTimer);
+                    resetBtn();
+                });
             });
         });
 
@@ -213,6 +227,23 @@
                 });
             });
         });
+    }
+
+    function showToast(card, message) {
+        const existing = card.querySelector('.lc-toast');
+        if (existing) existing.remove();
+
+        const toast = document.createElement('div');
+        toast.className = 'lc-toast';
+        toast.textContent = message;
+        card.appendChild(toast);
+
+        requestAnimationFrame(() => toast.classList.add('lc-toast-visible'));
+
+        setTimeout(() => {
+            toast.classList.remove('lc-toast-visible');
+            setTimeout(() => toast.remove(), 200);
+        }, 3200);
     }
 
     function removeBanner() {
@@ -422,6 +453,29 @@
                 width: 100%;
                 font-size: 12px;
                 padding: 8px 0;
+            }
+            #lc-reminder-card .lc-toast {
+                position: absolute;
+                left: 12px;
+                right: 12px;
+                bottom: 100%;
+                margin-bottom: 8px;
+                background: rgba(0,0,0,0.88);
+                color: #ffffff;
+                font-size: 12px;
+                font-weight: 600;
+                line-height: 1.4;
+                padding: 9px 11px;
+                border-radius: 8px;
+                opacity: 0;
+                transform: translateY(4px);
+                transition: opacity 0.2s ease, transform 0.2s ease;
+                pointer-events: none;
+                box-shadow: 0 8px 20px -6px rgba(0,0,0,0.5);
+            }
+            #lc-reminder-card .lc-toast.lc-toast-visible {
+                opacity: 1;
+                transform: translateY(0);
             }
         `;
         document.head.appendChild(style);

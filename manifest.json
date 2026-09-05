@@ -3,6 +3,14 @@
   "name": "Cadence",
   "version": "2.0",
   "description": "Aggressively reminds you on every webpage until you've done your daily LeetCode, GitHub, and Codeforces activity.",
+  "icons": {
+    "16": "logo.png",
+    "48": "logo.png",
+    "128": "logo.png"
+  },
+  "action": {
+    "default_icon": "logo.png"
+  },
   "permissions": [
     "alarms",
     "storage"

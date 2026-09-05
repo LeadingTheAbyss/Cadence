@@ -130,6 +130,9 @@ Tokens and usernames never leave your machine except in direct, authenticated ca
 
 ## 📌 Updates
 
+**Version 1.3**
+- GitHub tracking now also checks your private repositories, not just public ones. Previously, if all your work for the day was in a private repo, Cadence could wrongly think you hadn't done anything. It also now counts pull requests, issues, and code reviews as valid activity, not just commits, and gives you a clearer heads-up if your saved token needs to be updated to see private activity.
+
 **Version 1.2**
 - LeetCode's daily challenge is now checked against the correct reset time. Since LeetCode's own daily doesn't actually flip over right at midnight IST, Cadence used to mark you as "not done" for a little while even after a fresh daily had gone live. It now waits until the real reset time before checking, so the banner matches what you'd see on LeetCode itself.
 - Your LeetCode username, GitHub username, and Codeforces handle can now all be changed from the Options page at any time, and everything updates immediately after you save, no need to reinstall or edit any files.

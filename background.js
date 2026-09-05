@@ -93,9 +93,24 @@ const GITHUB_CONTRIBUTIONS_QUERY = `
   query($username: String!, $from: DateTime!, $to: DateTime!) {
     user(login: $username) {
       contributionsCollection(from: $from, to: $to) {
-        commitContributionsByRepository(maxRepositories: 20) {
-          contributions(first: 50) {
+        commitContributionsByRepository(maxRepositories: 100) {
+          contributions(first: 100) {
             nodes { occurredAt commitCount }
+          }
+        }
+        issueContributionsByRepository(maxRepositories: 100) {
+          contributions(first: 100) {
+            nodes { occurredAt }
+          }
+        }
+        pullRequestContributionsByRepository(maxRepositories: 100) {
+          contributions(first: 100) {
+            nodes { occurredAt }
+          }
+        }
+        pullRequestReviewContributionsByRepository(maxRepositories: 100) {
+          contributions(first: 100) {
+            nodes { occurredAt }
           }
         }
       }
@@ -129,26 +144,53 @@ async function checkGithub() {
     });
     const data = await res.json();
 
+    if (!res.ok || data.message) {
+      const detail = data.message ? `: ${data.message}` : ` (HTTP ${res.status})`;
+      chrome.storage.local.set({ githubError: `GitHub authentication failed${detail}. Check your token in the extension options.` });
+      return;
+    }
+
     if (data.errors) {
       chrome.storage.local.set({ githubError: data.errors.map(e => e.message).join('; ') });
       return;
     }
 
-    const byRepo = data.data?.user?.contributionsCollection?.commitContributionsByRepository;
+    const collection = data.data?.user?.contributionsCollection;
+    const byCommit = collection?.commitContributionsByRepository;
+    const byIssue = collection?.issueContributionsByRepository;
+    const byPullRequest = collection?.pullRequestContributionsByRepository;
+    const byPullRequestReview = collection?.pullRequestReviewContributionsByRepository;
 
-    if (!Array.isArray(byRepo)) {
+    if (![byCommit, byIssue, byPullRequest, byPullRequestReview].every(Array.isArray)) {
       chrome.storage.local.set({ githubError: 'Unexpected GitHub GraphQL response shape.' });
       return;
     }
 
     const midnightIST = getMidnightISTTimestamp();
-    const hasCommitSinceMidnightIST = byRepo.some(repo =>
-      repo.contributions.nodes.some(n =>
-        n.commitCount > 0 && (new Date(n.occurredAt).getTime() / 1000) > midnightIST
-      )
-    );
+    const hasNodeSinceMidnightIST = (byRepo) =>
+      byRepo.some(repo =>
+        repo.contributions.nodes.some(n => (new Date(n.occurredAt).getTime() / 1000) > midnightIST)
+      );
 
-    chrome.storage.local.set({ isGithubDone: hasCommitSinceMidnightIST, githubError: null });
+    const hasActivitySinceMidnightIST =
+      hasNodeSinceMidnightIST(byCommit) ||
+      hasNodeSinceMidnightIST(byIssue) ||
+      hasNodeSinceMidnightIST(byPullRequest) ||
+      hasNodeSinceMidnightIST(byPullRequestReview);
+
+    if (!hasActivitySinceMidnightIST) {
+      const scopeHeader = res.headers.get('x-oauth-scopes') || '';
+      const scopes = scopeHeader.split(',').map(s => s.trim());
+      if (!scopes.includes('repo')) {
+        chrome.storage.local.set({
+          isGithubDone: false,
+          githubError: 'Your token doesn\'t have the "repo" scope, so private-repo activity can\'t be counted. Open extension options and generate a new classic PAT with the "repo" scope (or "public_repo" if you only work in public repos).'
+        });
+        return;
+      }
+    }
+
+    chrome.storage.local.set({ isGithubDone: hasActivitySinceMidnightIST, githubError: null });
 
   } catch (error) {
     console.error("GitHub fetch failed.", error);

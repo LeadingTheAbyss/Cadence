@@ -73,11 +73,14 @@
   <hr>
 
   <p>
-    GitHub tracking needs a Personal Access Token to read your contribution graph.
-    Create a classic PAT at
+    GitHub tracking needs a Personal Access Token to read your commits, issues, pull
+    requests, and PR reviews. Create a classic PAT at
     <a href="https://github.com/settings/tokens" target="_blank">github.com/settings/tokens</a>
-    with just the <b>read:user</b> scope. It's stored locally in this browser's
-    extension storage only and never leaves your machine except to call GitHub's API.
+    with the <b>repo</b> scope (or <b>public_repo</b> if you only ever work in public
+    repositories). A token without this scope can't see activity in your private
+    repos, it'll silently look like nothing happened, even if you're not actually done.
+    The token is stored locally in this browser's extension storage only and never
+    leaves your machine except to call GitHub's API.
   </p>
 
   <label for="githubToken">GitHub Personal Access Token</label>
