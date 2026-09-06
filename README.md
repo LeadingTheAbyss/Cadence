@@ -86,13 +86,13 @@ Cadence isn't on the Chrome Web Store, so it's installed as an unpacked extensio
 
 ## 🔑 Setup
 
-Cadence ships with no accounts or tokens baked in, you tell it who you are. Nothing works until you complete this step.
+Cadence ships with no accounts or tokens baked in, you tell it who you are. Everything is entered straight into the extension's own Options page, nothing to edit by hand, no files, no code. Nothing works until you complete this step.
 
 1. **Open the Options page.**
    Right-click the Cadence icon in your browser toolbar, then **Options**.
    Or go to your extensions page (`chrome://extensions`), find Cadence, and click **Details**, then **Extension options**.
 
-2. **Fill in the platforms you want tracked.** All three are optional and independent, leave any of them blank to skip that check entirely, no extra config needed.
+2. **Type in the platforms you want tracked.** All three are optional and independent, leave any of them blank to skip that check entirely, no extra config needed.
 
    **LeetCode username**
      Enter your public LeetCode username exactly as it appears in your profile URL (`leetcode.com/u/<this-part>/`).
@@ -101,12 +101,12 @@ Cadence ships with no accounts or tokens baked in, you tell it who you are. Noth
      Enter your Codeforces handle exactly as it appears in your profile URL (`codeforces.com/profile/<this-part>`).
 
    **GitHub username + Personal Access Token**
-     GitHub's contribution calendar isn't available through a public, unauthenticated API, you need to supply a token so Cadence can query it on your behalf.
+     GitHub's contribution graph (commits, PRs, issues, and reviews, including private repos) isn't available through a public, unauthenticated API, you need to supply a token so Cadence can query it on your behalf.
      1. Go to [github.com/settings/tokens](https://github.com/settings/tokens).
      2. Click **Generate new token**, then **Generate new token (classic)**.
      3. Give it any name you'll recognize later, e.g. `Cadence extension`.
      4. Under **Expiration**, pick whatever you're comfortable with (no expiration works, but a 90 day rotation is safer).
-     5. Under **Select scopes**, check only **`read:user`**, nothing else is required.
+     5. Under **Select scopes**, tick the whole **`repo`** section (the top-level checkbox), don't just tick one of the smaller checkboxes underneath it, that covers all your repos including private ones. If you only ever work in public repos, ticking just **`public_repo`** is enough instead.
      6. Click **Generate token** at the bottom.
      7. Copy the token immediately (GitHub only shows it once).
      8. Paste it into the **GitHub Personal Access Token** field in Cadence's Options page, and also fill in your **GitHub username** in the field above it.
