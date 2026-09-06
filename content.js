@@ -266,11 +266,17 @@
         const style = document.createElement('style');
         style.id = 'lc-reminder-style';
         style.textContent = `
-            #lc-reminder-card, #lc-reminder-card * {
-                font-style: normal;
-                text-transform: none;
-                letter-spacing: normal;
-                box-sizing: border-box;
+            #lc-reminder-card, #lc-reminder-card *, #lc-toast {
+                font-style: normal !important;
+                text-transform: none !important;
+                letter-spacing: normal !important;
+                text-align: left !important;
+                direction: ltr !important;
+                white-space: normal !important;
+                float: none !important;
+                list-style: none !important;
+                margin: 0 !important;
+                box-sizing: border-box !important;
             }
             #lc-reminder-card {
                 position: fixed;
@@ -295,9 +301,9 @@
                 pointer-events: auto;
             }
             #lc-reminder-card .lc-header {
-                display: flex;
-                align-items: center;
-                gap: 8px;
+                display: flex !important;
+                align-items: center !important;
+                gap: 8px !important;
                 padding: 14px 12px 12px 16px;
                 border-bottom: 1px solid rgba(255,255,255,0.14);
             }
@@ -319,7 +325,7 @@
                 font-size: 13.5px;
                 font-weight: 700;
                 letter-spacing: 0.3px;
-                flex: 1;
+                flex: 1 !important;
                 text-transform: uppercase;
                 opacity: 0.95;
             }
@@ -348,15 +354,15 @@
                 max-height: 220px;
             }
             #lc-reminder-card .lc-settings-inner {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
                 padding: 4px 12px 12px 12px;
             }
             #lc-reminder-card .lc-toggle {
-                display: flex;
-                align-items: center;
-                gap: 10px;
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
                 cursor: pointer;
             }
             #lc-reminder-card .lc-toggle-label {
@@ -365,10 +371,10 @@
             }
             #lc-reminder-card .lc-switch {
                 position: relative;
-                display: inline-block;
-                width: 34px;
-                height: 20px;
-                flex-shrink: 0;
+                display: inline-block !important;
+                width: 34px !important;
+                height: 20px !important;
+                flex-shrink: 0 !important;
             }
             #lc-reminder-card .lc-switch input {
                 position: absolute;
@@ -406,15 +412,15 @@
                 outline-offset: 2px;
             }
             #lc-reminder-card .lc-list {
-                display: flex;
-                flex-direction: column;
-                gap: 6px;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 6px !important;
                 padding: 12px;
             }
             #lc-reminder-card .lc-item {
-                display: flex;
-                align-items: center;
-                gap: 10px;
+                display: flex !important;
+                align-items: center !important;
+                gap: 10px !important;
                 padding: 8px 10px;
                 background: rgba(255,255,255,0.08);
                 border-radius: 9px;
@@ -427,12 +433,12 @@
                 transform: translateX(2px);
             }
             #lc-reminder-card .lc-item-badge {
-                display: inline-flex;
-                align-items: center;
-                justify-content: center;
-                width: 28px;
-                height: 28px;
-                flex-shrink: 0;
+                display: inline-flex !important;
+                align-items: center !important;
+                justify-content: center !important;
+                width: 28px !important;
+                height: 28px !important;
+                flex-shrink: 0 !important;
                 border-radius: 7px;
                 background: rgba(0,0,0,0.28);
                 font-size: 10.5px;
@@ -442,7 +448,7 @@
             #lc-reminder-card .lc-item-label {
                 font-size: 13.5px;
                 font-weight: 600;
-                flex: 1;
+                flex: 1 !important;
             }
             #lc-reminder-card .lc-item-arrow {
                 opacity: 0.6;
@@ -454,9 +460,9 @@
                 opacity: 1;
             }
             #lc-reminder-card .lc-footer {
-                display: flex;
-                flex-direction: column;
-                gap: 8px;
+                display: flex !important;
+                flex-direction: column !important;
+                gap: 8px !important;
                 padding: 4px 12px 14px 12px;
             }
             #lc-reminder-card .lc-btn {
@@ -475,7 +481,7 @@
                 color: #a10f0f;
                 font-size: 13.5px;
                 padding: 9px 0;
-                width: 100%;
+                width: 100% !important;
             }
             #lc-reminder-card .lc-btn-primary:hover {
                 background: #ffe9e9;
@@ -485,11 +491,11 @@
                 cursor: default;
             }
             #lc-reminder-card .lc-snooze-group {
-                display: flex;
-                gap: 8px;
+                display: flex !important;
+                gap: 8px !important;
             }
             #lc-reminder-card .lc-btn-ghost {
-                flex: 1;
+                flex: 1 !important;
                 background: rgba(255,255,255,0.1);
                 color: #ffffff;
                 font-size: 12px;
@@ -500,7 +506,7 @@
                 background: rgba(255,255,255,0.2);
             }
             #lc-reminder-card .lc-btn-full {
-                width: 100%;
+                width: 100% !important;
                 font-size: 12px;
                 padding: 8px 0;
             }
